@@ -185,10 +185,10 @@ def test_mysql_connection(host) -> bool:
         try:
             conn = pymysql.connect(
                 host=host,
-                user='root',
-                password = "mysql",
-                db='mysql',
-                port=PYTEST_MYSQL_PORT
+                user="root",
+                password="mysql",
+                db="mysql",
+                port=PYTEST_MYSQL_PORT,
             )
             conn.close()
             return True
@@ -322,9 +322,7 @@ def new_mysql_db():
             attempts -= 1
             time.sleep(3)
     if not mysql_is_running:
-        raise Exception(
-            f"Failed to start the Mysql container. Status: {mysql.status}."
-        )
+        raise Exception(f"Failed to start the Mysql container. Status: {mysql.status}.")
 
     final_host = None
     if host := os.environ.get("DOCKER_HOST_NAME"):

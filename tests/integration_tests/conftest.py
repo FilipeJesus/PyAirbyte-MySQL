@@ -167,7 +167,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         "Postgres": pytest.param("new_postgres_cache"),
         "Mysql": pytest.param("new_mysql_cache"),
         "BigQuery": pytest.param("new_bigquery_cache", marks=marks),
-        "Snowflake": pytest.param("new_snowflake_cache", marks=marks)
+        "Snowflake": pytest.param("new_snowflake_cache", marks=marks),
     }
     if meta.is_windows():
         # Postgres and Mysql tests require Linux containers
