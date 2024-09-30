@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from pytz import utc
-from sqlalchemy import Column, DateTime, PrimaryKeyConstraint, String, and_
+from sqlalchemy import Column, DateTime, PrimaryKeyConstraint, String, and_, Text
 from sqlalchemy.orm import Session, declarative_base
 
 from airbyte_protocol.models import (
@@ -47,16 +47,16 @@ class CacheStreamStateModel(SqlAlchemyModel):  # type: ignore[misc]
 
     __tablename__ = CACHE_STATE_TABLE_NAME
 
-    source_name = Column(String)
+    source_name = Column(String(255))
     """The source name."""
 
-    stream_name = Column(String)
+    stream_name = Column(String(255))
     """The stream name."""
 
-    table_name = Column(String, primary_key=True)
+    table_name = Column(String(255), primary_key=True)
     """The table name holding records for the stream."""
 
-    state_json = Column(String)
+    state_json = Column(Text)
     """The JSON string representation of the state message."""
 
     last_updated = Column(
@@ -77,16 +77,16 @@ class DestinationStreamStateModel(SqlAlchemyModel):  # type: ignore[misc]
     __tablename__ = DESTINATION_STATE_TABLE_NAME
     __table_args__ = (PrimaryKeyConstraint("destination_name", "source_name", "stream_name"),)
 
-    destination_name = Column(String, nullable=False)
+    destination_name = Column(String(255), nullable=False)
     """The destination name."""
 
-    source_name = Column(String, nullable=False)
+    source_name = Column(String(255), nullable=False)
     """The source name."""
 
-    stream_name = Column(String, nullable=False)
+    stream_name = Column(String(255), nullable=False)
     """The stream name."""
 
-    state_json = Column(String)
+    state_json = Column(Text)
     """The JSON string representation of the state message."""
 
     last_updated = Column(

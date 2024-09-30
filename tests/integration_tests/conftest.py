@@ -57,7 +57,7 @@ def motherduck_secrets(ci_secret_manager: GoogleGSMSecretManager) -> dict:
     ).parse_json()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def new_motherduck_cache(
     motherduck_secrets,
 ) -> MotherDuckCache:
@@ -75,7 +75,7 @@ def snowflake_creds(ci_secret_manager: GoogleGSMSecretManager) -> dict:
     ).parse_json()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def new_snowflake_cache(snowflake_creds: dict):
     config = SnowflakeCache(
         account=snowflake_creds["account"],
@@ -98,7 +98,7 @@ def new_snowflake_cache(snowflake_creds: dict):
         connection.execute(text(f"DROP SCHEMA IF EXISTS {config.schema_name}"))
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def new_bigquery_cache(ci_secret_manager: GoogleGSMSecretManager):
     dest_bigquery_config = ci_secret_manager.get_secret(
         "SECRET_DESTINATION-BIGQUERY_CREDENTIALS__CREDS"
@@ -124,7 +124,7 @@ def new_bigquery_cache(ci_secret_manager: GoogleGSMSecretManager):
                 connection.execute(text(f"DROP SCHEMA IF EXISTS {cache.schema_name}"))
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def bigquery_credentials_file(ci_secret_manager: GoogleGSMSecretManager):
     dest_bigquery_config = ci_secret_manager.get_secret(
         secret_name="SECRET_DESTINATION-BIGQUERY_CREDENTIALS__CREDS"
@@ -139,7 +139,7 @@ def bigquery_credentials_file(ci_secret_manager: GoogleGSMSecretManager):
     return
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def with_snowflake_password_env_var(snowflake_creds: dict):
     os.environ["SNOWFLAKE_PASSWORD"] = snowflake_creds["password"]
 
@@ -148,7 +148,7 @@ def with_snowflake_password_env_var(snowflake_creds: dict):
     return
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def new_generic_cache(request) -> CacheBase:
     """This is a placeholder fixture that will be overridden by pytest_generate_tests()."""
     return request.getfixturevalue(request.param)
@@ -160,16 +160,19 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     This is useful for running the same tests with different cache types, to ensure that the tests
     can pass across all cache types.
     """
+    marks = [pytest.mark.requires_creds]
     all_cache_type_fixtures: dict[str, str] = {
         # Ordered by priority (fastest first)
-        "DuckDB": "new_duckdb_cache",
-        "Postgres": "new_postgres_cache",
-        "BigQuery": "new_bigquery_cache",
-        "Snowflake": "new_snowflake_cache",
+        "DuckDB": pytest.param("new_duckdb_cache", marks=marks),
+        "Postgres": pytest.param("new_postgres_cache"),
+        "Mysql": pytest.param("new_mysql_cache"),
+        "BigQuery": pytest.param("new_bigquery_cache", marks=marks),
+        "Snowflake": pytest.param("new_snowflake_cache", marks=marks)
     }
     if meta.is_windows():
-        # Postgres tests require Linux containers
+        # Postgres and Mysql tests require Linux containers
         all_cache_type_fixtures.pop("Postgres")
+        all_cache_type_fixtures.pop("Mysql")
 
     if "new_generic_cache" in metafunc.fixturenames:
         metafunc.parametrize(
@@ -177,5 +180,5 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
             all_cache_type_fixtures.values(),
             ids=all_cache_type_fixtures.keys(),
             indirect=True,
-            scope="function",
+            scope="session",
         )

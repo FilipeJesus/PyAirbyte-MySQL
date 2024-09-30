@@ -21,10 +21,12 @@ import pytest
 import pytest_mock
 from airbyte._processors.sql.duckdb import DuckDBSqlProcessor
 from airbyte._processors.sql.postgres import PostgresSqlProcessor
+from airbyte._processors.sql.mysql import MysqlSqlProcessor
 from airbyte._util.venv_util import get_bin_dir
 from airbyte.caches.base import CacheBase
 from airbyte.caches.duckdb import DuckDBCache
 from airbyte.caches.postgres import PostgresCache
+from airbyte.caches.mysql import MysqlCache
 from airbyte.caches.util import new_local_cache
 from airbyte.strategies import WriteStrategy
 from duckdb_engine import DuckDBEngineWarning
@@ -300,6 +302,29 @@ def test_merge_insert_not_supported_for_postgres(
     mocker.patch.object(PostgresSqlProcessor, "supports_merge_insert", new=True)
     try:
         result = source_faker_seed_a.read(new_postgres_cache, write_strategy="merge")
+        if result:
+            raise AssertionError("Cache supports merge-insert, but it's set to False.")
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+        if isinstance(e, AssertionError):
+            raise e
+
+
+def test_merge_insert_not_supported_for_mysql(
+    source_faker_seed_a: ab.Source,
+    new_mysql_cache: MysqlCache,
+    mocker: pytest_mock.MockFixture,
+):
+    """Confirm that mysql does not support merge insert natively"""
+    # TODO - This test keeps getting skipped, investigate why.
+    #        It appears to be due to the fixture `new_mysql_cache` not detecting docker properly.
+    if MysqlSqlProcessor.supports_merge_insert:
+        return  # Skip this test if the cache supports merge-insert.
+
+    # Otherwise, toggle the value and we should expect an exception.
+    mocker.patch.object(MysqlSqlProcessor, "supports_merge_insert", new=True)
+    try:
+        result = source_faker_seed_a.read(new_mysql_cache, write_strategy="merge")
         if result:
             raise AssertionError("Cache supports merge-insert, but it's set to False.")
     except Exception as e:

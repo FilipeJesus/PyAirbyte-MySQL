@@ -56,16 +56,19 @@ def new_source_faker() -> Source:
     )
 
 
+@pytest.mark.docker_faker
 def test_duckdb_destination_spec(new_duckdb_destination: Destination) -> None:
     """Test the JSONL destination."""
     new_duckdb_destination.print_config_spec()
 
 
+@pytest.mark.docker_faker
 def test_duckdb_destination_check(new_duckdb_destination: Destination) -> None:
     """Test the JSONL destination."""
     new_duckdb_destination.check()
 
 
+@pytest.mark.docker_faker
 def test_duckdb_destination_write_components(
     new_duckdb_destination: Destination,
     new_source_faker: Source,
@@ -99,6 +102,7 @@ def test_duckdb_destination_write_components(
     )
 
 
+@pytest.mark.docker_faker
 def test_destination_write_from_source_with_cache(
     new_duckdb_destination: Destination,
     new_source_faker: Source,
@@ -113,6 +117,7 @@ def test_destination_write_from_source_with_cache(
     assert write_result
 
 
+@pytest.mark.docker_faker
 def test_destination_write_from_source_without_cache(
     new_duckdb_destination: Destination,
     new_source_faker: Source,
@@ -127,6 +132,7 @@ def test_destination_write_from_source_without_cache(
     assert write_result
 
 
+@pytest.mark.docker_faker
 def test_destination_write_from_read_result(
     new_duckdb_destination: Destination,
     new_source_faker: Source,

@@ -384,6 +384,10 @@ def get_destination(
             response.destination_response.configuration = models.DestinationPostgres.from_dict(
                 raw_configuration,
             )
+        if destination_type == "mysql":
+            response.destination_response.configuration = models.DestinationMysql.from_dict(
+                raw_configuration,
+            )
         if destination_type == "duckdb":
             response.destination_response.configuration = models.DestinationDuckdb.from_dict(
                 raw_configuration,

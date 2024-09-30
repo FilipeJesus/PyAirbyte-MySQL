@@ -16,18 +16,24 @@ from pathlib import Path
 import airbyte
 import docker
 import psycopg
+import pymysql
 import pytest
 import ulid
 from _pytest.nodes import Item
 from airbyte._util.meta import is_windows
 from airbyte._util.venv_util import get_bin_dir
 from airbyte.caches import PostgresCache
+from airbyte.caches import MysqlCache
 from airbyte.caches.duckdb import DuckDBCache
 from airbyte.caches.util import new_local_cache
 from requests.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
 
+
+PYTEST_MYSQL_IMAGE = "mysql:8.0"
+PYTEST_MYSQL_CONTAINER = "mysql_pytest_container"
+PYTEST_MYSQL_PORT = 3306
 
 PYTEST_POSTGRES_IMAGE = "postgres:13"
 PYTEST_POSTGRES_CONTAINER = "postgres_pytest_container"
@@ -95,6 +101,8 @@ def pytest_collection_modifyitems(items: list[Item]) -> None:
         if (
             "new_postgres_cache" in item.fixturenames
             or "postgres_cache" in item.fixturenames
+            or "new_mysql_cache" in item.fixturenames
+            or "mysql_cache" in item.fixturenames
             or "source_docker_faker_seed_a" in item.fixturenames
             or "source_docker_faker_seed_b" in item.fixturenames
             or "new_duckdb_destination_executor" in item.fixturenames
@@ -136,6 +144,22 @@ def remove_postgres_container():
             pass  # Docker not running, nothing to do.
 
 
+@pytest.fixture(scope="session", autouse=True)
+def remove_mysql_container():
+    if is_port_in_use(PYTEST_MYSQL_PORT):
+        try:
+            client = docker.from_env()
+            container = client.containers.get(
+                PYTEST_MYSQL_CONTAINER,
+            )
+            container.stop()
+            container.remove()
+        except docker.errors.NotFound:
+            pass  # Container not found, nothing to do.
+        except docker.errors.DockerException:
+            pass  # Docker not running, nothing to do.
+
+
 def test_pg_connection(host) -> bool:
     pg_url = f"postgresql://postgres:postgres@{host}:{PYTEST_POSTGRES_PORT}/postgres"
 
@@ -151,6 +175,28 @@ def test_pg_connection(host) -> bool:
             )
             time.sleep(1.0)
 
+    else:
+        return False
+
+
+def test_mysql_connection(host) -> bool:
+    max_attempts = 120
+    for attempt in range(max_attempts):
+        try:
+            conn = pymysql.connect(
+                host=host,
+                user='root',
+                password = "mysql",
+                db='mysql',
+                port=PYTEST_MYSQL_PORT
+            )
+            conn.close()
+            return True
+        except pymysql.OperationalError:
+            logger.info(
+                f"Waiting for mysql to start (attempt {attempt + 1}/{max_attempts})"
+            )
+            time.sleep(1.0)
     else:
         return False
 
@@ -233,6 +279,73 @@ def new_postgres_db():
     postgres.remove()
 
 
+@pytest.fixture(scope="session")
+def new_mysql_db():
+    """Fixture to start a new Mysql container for testing.
+
+    This fixture will start a new Mysql container before the tests run and stop it after the
+    tests are done. The host of the Mysql database will be returned to the tests.
+    """
+    client = docker.from_env()
+    try:
+        client.images.get(PYTEST_MYSQL_IMAGE)
+    except (docker.errors.ImageNotFound, HTTPError):
+        # Pull the image if it doesn't exist, to avoid failing our sleep timer
+        # if the image needs to download on-demand.
+        client.images.pull(PYTEST_MYSQL_IMAGE)
+
+    try:
+        previous_container = client.containers.get(PYTEST_MYSQL_CONTAINER)
+        previous_container.remove()
+    except docker.errors.NotFound:
+        pass
+
+    mysql_is_running = False
+    mysql = client.containers.run(
+        image=PYTEST_MYSQL_IMAGE,
+        name=PYTEST_MYSQL_CONTAINER,
+        environment={
+            "MYSQL_ROOT_PASSWORD": "mysql",
+            "MYSQL_DATABASE": "mysql",
+        },
+        ports={"3306/tcp": PYTEST_MYSQL_PORT},
+        command='--sql-mode=""',
+        detach=True,
+    )
+
+    attempts = 10
+    while not mysql_is_running and attempts > 0:
+        try:
+            mysql.reload()
+            mysql_is_running = mysql.status == "running"
+        except docker.errors.NotFound:
+            attempts -= 1
+            time.sleep(3)
+    if not mysql_is_running:
+        raise Exception(
+            f"Failed to start the Mysql container. Status: {mysql.status}."
+        )
+
+    final_host = None
+    if host := os.environ.get("DOCKER_HOST_NAME"):
+        final_host = host if test_pg_connection(host) else None
+    else:
+        # Try to connect to the database using localhost and the docker host IP
+        for host in ["127.0.0.1", "localhost", "host.docker.internal", "172.17.0.1"]:
+            if test_mysql_connection(host):
+                final_host = host
+                break
+
+    if final_host is None:
+        raise Exception(f"Failed to connect to the Mysql database on host {host}.")
+
+    yield final_host
+
+    # Stop and remove the container after the tests are done
+    mysql.stop()
+    mysql.remove()
+
+
 @pytest.fixture(scope="function")
 def new_postgres_cache(new_postgres_db: str):
     """Fixture to return a fresh Postgres cache.
@@ -245,6 +358,25 @@ def new_postgres_cache(new_postgres_db: str):
         username="postgres",
         password="postgres",
         database="postgres",
+        schema_name="public",
+        # TODO: Move this to schema name when we support it (breaks as of 2024-01-31):
+        table_prefix=f"test{str(ulid.ULID())[-6:]}_",
+    )
+    yield config
+
+
+@pytest.fixture(scope="function")
+def new_mysql_cache(new_mysql_db: str):
+    """Fixture to return a fresh Mysql cache.
+
+    Each test that uses this fixture will get a unique table prefix.
+    """
+    config = MysqlCache(
+        host=new_mysql_db,
+        port=PYTEST_MYSQL_PORT,
+        username="root",
+        password="mysql",
+        database="mysql",
         schema_name="public",
         # TODO: Move this to schema name when we support it (breaks as of 2024-01-31):
         table_prefix=f"test{str(ulid.ULID())[-6:]}_",

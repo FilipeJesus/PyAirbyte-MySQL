@@ -163,6 +163,7 @@ def e2e_test_destination() -> ab.Destination:
     )
 
 
+@pytest.mark.docker_faker
 def test_destination_state(
     source_faker_seed_a: ab.Source,
     e2e_test_destination: ab.Destination,

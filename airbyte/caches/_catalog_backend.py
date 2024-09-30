@@ -12,7 +12,7 @@ import abc
 import json
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Text
 from sqlalchemy.orm import Session, declarative_base
 
 from airbyte_protocol.models import (
@@ -41,10 +41,10 @@ class CachedStream(SqlAlchemyModel):  # type: ignore[valid-type,misc]
 
     __tablename__ = STREAMS_TABLE_NAME
 
-    stream_name = Column(String)
-    source_name = Column(String)
-    table_name = Column(String, primary_key=True)
-    catalog_metadata = Column(String)
+    stream_name = Column(String(255))
+    source_name = Column(String(255))
+    table_name = Column(String(255), primary_key=True)
+    catalog_metadata = Column(Text)
 
 
 class CatalogBackendBase(abc.ABC):

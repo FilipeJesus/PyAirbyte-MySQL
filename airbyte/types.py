@@ -13,7 +13,8 @@ from rich import print  # noqa: A004  # Allow shadowing the built-in
 
 # Compare to documentation here: https://docs.airbyte.com/understanding-airbyte/supported-data-types
 CONVERSION_MAP = {
-    "string": sqlalchemy.types.VARCHAR,
+    "string": sqlalchemy.types.VARCHAR(255),
+    "text": sqlalchemy.types.TEXT,
     "integer": sqlalchemy.types.BIGINT,
     "number": sqlalchemy.types.DECIMAL(38, 9),
     "boolean": sqlalchemy.types.BOOLEAN,
@@ -107,14 +108,14 @@ class SQLTypeConverter:
         self.conversion_map = conversion_map or CONVERSION_MAP
 
     @classmethod
-    def get_string_type(cls) -> sqlalchemy.types.TypeEngine:
+    def get_string_type(cls, size=None) -> sqlalchemy.types.TypeEngine:
         """Get the type to use for string data."""
-        return sqlalchemy.types.VARCHAR()
+        return sqlalchemy.types.VARCHAR(size)
 
     @classmethod
     def get_failover_type(cls) -> sqlalchemy.types.TypeEngine:
         """Get the 'last resort' type to use if no other type is found."""
-        return cls.get_string_type()
+        return cls.get_string_type(255)
 
     @classmethod
     def get_json_type(cls) -> sqlalchemy.types.TypeEngine:
