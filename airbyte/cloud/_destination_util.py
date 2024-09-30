@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from airbyte_api.models import (
     DestinationBigquery,
     DestinationDuckdb,
+    DestinationMysql,
     DestinationPostgres,
     DestinationSnowflake,
     StandardInserts,
@@ -19,6 +20,7 @@ from airbyte.caches import (
     BigQueryCache,
     DuckDBCache,
     MotherDuckCache,
+    MysqlCache,
     PostgresCache,
     SnowflakeCache,
 )
@@ -43,6 +45,7 @@ def get_destination_config_from_cache(
         "DuckDBCache": get_duckdb_destination_config,
         "MotherDuckCache": get_motherduck_destination_config,
         "PostgresCache": get_postgres_destination_config,
+        "MysqlCache": get_mysql_destination_config,
         "SnowflakeCache": get_snowflake_destination_config,
     }
     cache_class_name = cache.__class__.__name__
@@ -82,6 +85,20 @@ def get_postgres_destination_config(
 ) -> dict[str, str]:
     """Get the destination configuration from the Postgres cache."""
     return DestinationPostgres(
+        database=cache.database,
+        host=cache.host,
+        password=cache.password,
+        port=cache.port,
+        schema=cache.schema_name,
+        username=cache.username,
+    ).to_dict()
+
+
+def get_mysql_destination_config(
+    cache: MysqlCache,
+) -> dict[str, str]:
+    """Get the destination configuration from the Mysql cache."""
+    return DestinationMysql(
         database=cache.database,
         host=cache.host,
         password=cache.password,
@@ -173,6 +190,21 @@ def create_postgres_cache(
     )
 
 
+def create_mysql_cache(
+    destination_configuration: DestinationMysql,
+) -> MysqlCache:
+    """Create a new Mysql cache from the destination configuration."""
+    port: int = int(destination_configuration.port) if "port" in destination_configuration else 5432
+    return MysqlCache(
+        database=destination_configuration.database,
+        host=destination_configuration.host,
+        password=destination_configuration.password,
+        port=port,
+        schema_name=destination_configuration.schema,
+        username=destination_configuration.username,
+    )
+
+
 def create_snowflake_cache(
     destination_configuration: DestinationSnowflake,
     password_secret_name: str = SNOWFLAKE_PASSWORD_SECRET_NAME,
@@ -193,6 +225,7 @@ def create_cache_from_destination_config(
     destination_configuration: DestinationBigquery
     | DestinationDuckdb
     | DestinationPostgres
+    | DestinationMysql
     | DestinationSnowflake,
 ) -> CacheBase:
     """Create a new cache from the destination."""
@@ -200,6 +233,7 @@ def create_cache_from_destination_config(
         "DestinationBigquery": create_bigquery_cache,
         "DestinationDuckdb": create_duckdb_cache,
         "DestinationPostgres": create_postgres_cache,
+        "DestinationMysql": create_mysql_cache,
         "DestinationSnowflake": create_snowflake_cache,
     }
     destination_class_name = type(destination_configuration).__name__

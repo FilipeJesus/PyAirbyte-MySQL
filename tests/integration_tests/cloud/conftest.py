@@ -85,6 +85,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         # Ordered by priority (fastest first)
         # "MotherDuck": "new_motherduck_cache",
         # "Postgres": "new_remote_postgres_cache",
+        # "Mysql": "new_remote_mysql_cache",
         "BigQuery": "new_bigquery_cache",
         "Snowflake": "new_snowflake_cache",
     }

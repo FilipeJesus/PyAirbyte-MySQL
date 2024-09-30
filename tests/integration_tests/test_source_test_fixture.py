@@ -20,7 +20,7 @@ from airbyte._executors.docker import DockerExecutor
 from airbyte._executors.local import PathExecutor
 from airbyte._executors.python import VenvExecutor
 from airbyte._util.venv_util import get_bin_dir
-from airbyte.caches import PostgresCache, SnowflakeCache
+from airbyte.caches import PostgresCache, SnowflakeCache, MysqlCache
 from airbyte.constants import AB_INTERNAL_COLUMNS
 from airbyte.datasets import CachedDataset, LazyDataset, SQLDataset
 from airbyte.results import ReadResult
@@ -793,6 +793,31 @@ def test_sync_with_merge_to_postgres(
     )
 
 
+def test_sync_with_merge_to_mysql(
+    new_mysql_cache: MysqlCache,
+    expected_test_stream_data: dict[str, list[dict[str, str | int]]],
+):
+    """Test that the merge strategy works as expected.
+
+    In this test, we sync the same data twice. If the data is not duplicated, we assume
+    the merge was successful.
+    """
+    source = ab.get_source("source-test", config={"apiKey": "test"})
+    source.select_all_streams()
+
+    # Read twice to test merge strategy
+    result: ReadResult = source.read(new_mysql_cache, write_strategy="merge")
+    result: ReadResult = source.read(new_mysql_cache, write_strategy="merge")
+
+    assert result.processed_records == sum(
+        len(stream_data) for stream_data in expected_test_stream_data.values()
+    )
+    assert_data_matches_cache(
+        expected_test_stream_data=expected_test_stream_data,
+        cache=new_mysql_cache,
+    )
+
+
 def test_airbyte_version() -> None:
     assert get_version()
     assert isinstance(get_version(), str)
@@ -815,6 +840,30 @@ def test_sync_to_postgres(
     )
     for stream_name, expected_data in expected_test_stream_data.items():
         if len(new_postgres_cache[stream_name]) > 0:
+            pd.testing.assert_frame_equal(
+                pop_internal_columns_from_dataframe(result[stream_name].to_pandas()),
+                pd.DataFrame(expected_data),
+                check_dtype=False,
+            )
+        else:
+            # stream is empty
+            assert len(expected_test_stream_data[stream_name]) == 0
+
+
+def test_sync_to_mysql(
+    new_mysql_cache: MysqlCache,
+    expected_test_stream_data: dict[str, list[dict[str, str | int]]],
+) -> None:
+    source = ab.get_source("source-test", config={"apiKey": "test"})
+    source.select_all_streams()
+
+    result: ReadResult = source.read(new_mysql_cache)
+
+    assert result.processed_records == sum(
+        len(stream_data) for stream_data in expected_test_stream_data.values()
+    )
+    for stream_name, expected_data in expected_test_stream_data.items():
+        if len(new_mysql_cache[stream_name]) > 0:
             pd.testing.assert_frame_equal(
                 pop_internal_columns_from_dataframe(result[stream_name].to_pandas()),
                 pd.DataFrame(expected_data),

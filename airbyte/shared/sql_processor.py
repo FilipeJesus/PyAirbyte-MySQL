@@ -86,6 +86,8 @@ class SQLRuntimeError(Exception):
 class SqlConfig(BaseModel, abc.ABC):
     """Common configuration for SQL connections."""
 
+    quote: str = '"'
+
     schema_name: str = Field(default="airbyte_raw")
     """The name of the schema to write to."""
 
@@ -512,7 +514,7 @@ class SqlProcessorBase(abc.ABC):
 
     def _quote_identifier(self, identifier: str) -> str:
         """Return the given identifier, quoted."""
-        return f'"{identifier}"'
+        return f"{self._sql_config.quote}{identifier}{self._sql_config.quote}"
 
     @final
     def _get_temp_table_name(
@@ -661,7 +663,7 @@ class SqlProcessorBase(abc.ABC):
                 json_schema_property_def,
             )
 
-        columns[AB_RAW_ID_COLUMN] = self.type_converter_class.get_string_type()
+        columns[AB_RAW_ID_COLUMN] = self.type_converter_class.get_string_type(64)
         columns[AB_EXTRACTED_AT_COLUMN] = sqlalchemy.TIMESTAMP()
         columns[AB_META_COLUMN] = self.type_converter_class.get_json_type()
 

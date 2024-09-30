@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, cast, final
+from typing import TYPE_CHECKING, final
 
 import google.oauth2
 import sqlalchemy
@@ -97,9 +97,9 @@ class BigQueryTypeConverter(SQLTypeConverter):
     """A class to convert types for BigQuery."""
 
     @classmethod
-    def get_string_type(cls) -> sqlalchemy.types.TypeEngine:
+    def get_string_type(cls, size: int | None = None) -> sqlalchemy.types.TypeEngine:
         """Return the string type for BigQuery."""
-        return cast(sqlalchemy.types.TypeEngine, "String")  # BigQuery uses STRING for all strings
+        return sqlalchemy.types.String(size)
 
     @overrides
     def to_sql_type(

@@ -134,6 +134,9 @@ def test_read_from_deployed_connection(
             "", id="Faker->Postgres", marks=pytest.mark.skip(reason="Not yet supported")
         ),
         pytest.param(
+            "", id="Faker->Mysql", marks=pytest.mark.skip(reason="Not yet supported")
+        ),
+        pytest.param(
             "",
             id="Faker->MotherDuck",
             marks=pytest.mark.skip(reason="Not yet supported"),
