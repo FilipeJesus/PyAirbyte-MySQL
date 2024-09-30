@@ -286,7 +286,6 @@ def test_merge_insert_not_supported_for_duckdb(
             raise e
 
 
-@pytest.mark.requires_creds
 def test_merge_insert_not_supported_for_postgres(
     source_faker_seed_a: ab.Source,
     new_postgres_cache: PostgresCache,

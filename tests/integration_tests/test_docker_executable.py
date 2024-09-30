@@ -70,7 +70,6 @@ def new_duckdb_cache() -> Generator[DuckDBCache, None, None]:
     return
 
 
-@pytest.mark.docker_faker
 def test_faker_pks(
     source_docker_faker_seed_a: ab.Source,
     new_duckdb_cache: DuckDBCache,
@@ -94,7 +93,6 @@ def test_faker_pks(
 
 
 @pytest.mark.slow
-@pytest.mark.docker_faker
 def test_replace_strategy(
     source_docker_faker_seed_a: ab.Source,
     new_duckdb_cache: CacheBase,
@@ -112,7 +110,6 @@ def test_replace_strategy(
 
 
 @pytest.mark.slow
-@pytest.mark.docker_faker
 def test_append_strategy(
     source_docker_faker_seed_a: ab.Source,
     new_duckdb_cache: CacheBase,
@@ -133,7 +130,6 @@ def test_append_strategy(
 
 
 @pytest.mark.slow
-@pytest.mark.docker_faker
 @pytest.mark.parametrize("strategy", ["merge", "auto"])
 def test_merge_strategy(
     strategy: str,
@@ -172,7 +168,6 @@ def test_merge_strategy(
         assert len(list(result.cache.streams["purchases"])) == FAKER_SCALE_B
 
 
-@pytest.mark.docker_faker
 def test_incremental_sync(
     source_docker_faker_seed_a: ab.Source,
     source_docker_faker_seed_b: ab.Source,
@@ -200,12 +195,10 @@ def test_incremental_sync(
     assert len(list(result2.cache.streams["purchases"])) == FAKER_SCALE_A
 
 
-@pytest.mark.docker_faker
 def test_config_spec(source_docker_faker_seed_a: ab.Source) -> None:
     assert source_docker_faker_seed_a.config_spec
 
 
-@pytest.mark.docker_faker
 def test_example_config_file(source_docker_faker_seed_a: ab.Source) -> None:
     with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp:
         source_docker_faker_seed_a.print_config_spec(

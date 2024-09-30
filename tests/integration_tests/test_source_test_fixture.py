@@ -809,7 +809,9 @@ def test_sync_with_merge_to_mysql(
     result: ReadResult = source.read(new_mysql_cache, write_strategy="merge")
     result: ReadResult = source.read(new_mysql_cache, write_strategy="merge")
 
-    assert result.processed_records == 3
+    assert result.processed_records == sum(
+        len(stream_data) for stream_data in expected_test_stream_data.values()
+    )
     assert_data_matches_cache(
         expected_test_stream_data=expected_test_stream_data,
         cache=new_mysql_cache,
@@ -857,7 +859,9 @@ def test_sync_to_mysql(
 
     result: ReadResult = source.read(new_mysql_cache)
 
-    assert result.processed_records == 3
+    assert result.processed_records == sum(
+        len(stream_data) for stream_data in expected_test_stream_data.values()
+    )
     for stream_name, expected_data in expected_test_stream_data.items():
         if len(new_mysql_cache[stream_name]) > 0:
             pd.testing.assert_frame_equal(
