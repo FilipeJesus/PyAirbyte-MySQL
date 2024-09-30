@@ -37,5 +37,5 @@ class MysqlCache(MysqlConfig, CacheBase):
 # Expose the Cache class and also the Config class.
 __all__ = [
     "MysqlCache",
-    "MysqlConfig",
+    "MysqlConfig"
 ]

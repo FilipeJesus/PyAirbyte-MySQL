@@ -21,7 +21,7 @@ class MysqlConfig(SqlConfig):
     database: str
     username: str
     password: SecretString | str
-    quote: str = '`'
+    quote: str = "`"
 
     @overrides
     def get_sql_alchemy_url(self) -> SecretString:

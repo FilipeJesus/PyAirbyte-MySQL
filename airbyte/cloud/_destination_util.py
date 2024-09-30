@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any
 from airbyte_api.models import (
     DestinationBigquery,
     DestinationDuckdb,
+    DestinationMysql,
     DestinationPostgres,
     DestinationSnowflake,
-    DestinationMysql,
     StandardInserts,
     UsernameAndPassword,
 )
@@ -20,8 +20,8 @@ from airbyte.caches import (
     BigQueryCache,
     DuckDBCache,
     MotherDuckCache,
-    PostgresCache,
     MysqlCache,
+    PostgresCache,
     SnowflakeCache,
 )
 from airbyte.secrets import get_secret

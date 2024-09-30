@@ -108,7 +108,7 @@ class SQLTypeConverter:
         self.conversion_map = conversion_map or CONVERSION_MAP
 
     @classmethod
-    def get_string_type(cls, size=None) -> sqlalchemy.types.TypeEngine:
+    def get_string_type(cls, size: int | None = None) -> sqlalchemy.types.TypeEngine:
         """Get the type to use for string data."""
         return sqlalchemy.types.VARCHAR(size)
 

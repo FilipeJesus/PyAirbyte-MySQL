@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-from airbyte.caches import base, bigquery, duckdb, motherduck, postgres, snowflake, util
+from airbyte.caches import base, bigquery, duckdb, motherduck, mysql, postgres, snowflake, util
 from airbyte.caches.base import CacheBase
 from airbyte.caches.bigquery import BigQueryCache
 from airbyte.caches.duckdb import DuckDBCache
 from airbyte.caches.motherduck import MotherDuckCache
-from airbyte.caches.postgres import PostgresCache
 from airbyte.caches.mysql import MysqlCache
+from airbyte.caches.postgres import PostgresCache
 from airbyte.caches.snowflake import SnowflakeCache
 from airbyte.caches.util import get_default_cache, new_local_cache
 

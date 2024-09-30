@@ -514,7 +514,7 @@ class SqlProcessorBase(abc.ABC):
 
     def _quote_identifier(self, identifier: str) -> str:
         """Return the given identifier, quoted."""
-        return f'{self._sql_config.quote}{identifier}{self._sql_config.quote}'
+        return f"{self._sql_config.quote}{identifier}{self._sql_config.quote}"
 
     @final
     def _get_temp_table_name(

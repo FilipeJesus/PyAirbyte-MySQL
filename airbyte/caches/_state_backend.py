@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from pytz import utc
-from sqlalchemy import Column, DateTime, PrimaryKeyConstraint, String, and_, Text
+from sqlalchemy import Column, DateTime, PrimaryKeyConstraint, String, Text, and_
 from sqlalchemy.orm import Session, declarative_base
 
 from airbyte_protocol.models import (

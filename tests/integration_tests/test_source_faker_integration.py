@@ -25,8 +25,8 @@ from airbyte._processors.sql.mysql import MysqlSqlProcessor
 from airbyte._util.venv_util import get_bin_dir
 from airbyte.caches.base import CacheBase
 from airbyte.caches.duckdb import DuckDBCache
-from airbyte.caches.postgres import PostgresCache
 from airbyte.caches.mysql import MysqlCache
+from airbyte.caches.postgres import PostgresCache
 from airbyte.caches.util import new_local_cache
 from airbyte.strategies import WriteStrategy
 from duckdb_engine import DuckDBEngineWarning
